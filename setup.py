@@ -29,6 +29,6 @@ setup(
     name='html_to_md_converter',
     packages=find_packages(include=['html_to_md_converter', 'html_to_md_converter.*']),
     url='https://github.com/sebastiankulla/html_to_md_converter',
-    version='0.1.0',
+    version='0.1.1',
     zip_safe=False,
 )
