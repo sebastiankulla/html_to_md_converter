@@ -18,6 +18,7 @@ class Converter(HTMLParser):
     ignore_data: bool
     class_div_count: int
     ignore_div: bool
+    table_start: Tuple[int, int]
 
     def __init__(self):
         super().__init__()
@@ -35,7 +36,9 @@ class Converter(HTMLParser):
         self.ignore_div = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'br':
+        if self.ignore_data:
+            return None
+        elif tag == 'br':
             self.md_file += '  \n'
         elif tag == 'hr':
             self.md_file += '\n***  \n'
@@ -68,13 +71,13 @@ class Converter(HTMLParser):
             if 'style' in attrs_dict and 'codeblock' in attrs_dict['style']:
                 self.code_box_div_num = self.div_count
                 self.code_box = True
-                self.md_file += '```  \n'
+                self.md_file += '```\n'
             elif 'class' in attrs_dict:
                 self.class_div_count = self.div_count
                 self.ignore_div = True
         elif tag == 'en-codeblock':
             self.code_box = True
-            self.md_file += '\n```  \n'
+            self.md_file += '\n```\n'
         elif tag == 'a':
             self.is_link = True
             attrs_dict = dict(attrs)
@@ -99,6 +102,16 @@ class Converter(HTMLParser):
             else:
                 self.related_data.append(img_ref)
                 self.md_file += f'![{alt_name}]({img_ref})'
+        elif tag == 'table':
+            self.ignore_data = True
+            self.table_start = self.getpos()
+
+    def get_rawdata(self, start, stop, offset):
+        temp_rawdata = self.rawdata
+        for i in range(offset-1):
+            next_section = temp_rawdata.find('\n')
+            temp_rawdata = temp_rawdata[next_section+1:]
+        return temp_rawdata[start:stop]
 
     def handle_endtag(self, tag):
         if tag == 'b' or tag == 'strong':
@@ -106,7 +119,7 @@ class Converter(HTMLParser):
         elif tag == 'div':
             if self.code_box and self.code_box_div_num == self.div_count:
                 self.code_box = False
-                self.md_file += '```  \n'
+                self.md_file += '```\n'
             elif self.ignore_div and self.class_div_count == self.div_count:
                 self.ignore_div = False
             else:
@@ -114,7 +127,7 @@ class Converter(HTMLParser):
             self.div_count -= 1
         elif tag == 'en-codeblock':
             self.code_box = False
-            self.md_file += '```  \n'
+            self.md_file += '```\n'
         elif tag == 'a':
             self.is_link = False
         elif tag == 'style':
@@ -125,6 +138,13 @@ class Converter(HTMLParser):
             self.ignore_data = False
         elif tag == 'li':
             self.md_file += '  \n'
+        elif tag == 'table':
+            offset, lineno_stop = self.getpos()
+            lineno_stop = lineno_stop + len(tag) + 3
+            _, lineno_start = self.table_start
+            raw_data = self.get_rawdata(lineno_start, lineno_stop, offset)
+            self.md_file += '\n' + raw_data
+            self.ignore_data = False
 
     def handle_startendtag(self, tag, attrs):
         if tag == 'br':
