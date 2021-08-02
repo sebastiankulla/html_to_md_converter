@@ -3,12 +3,8 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
-import subprocess
 requirements = []
 test_requirements = []
-
-cf_remote_version = subprocess.run(['git', 'describe', '--tags'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
-assert '.' in cf_remote_version
 
 setup(
     author="Sebastian Kulla",
@@ -32,6 +28,6 @@ setup(
     name='html_to_md_converter',
     packages=find_packages(include=['html_to_md_converter', 'html_to_md_converter.*']),
     url='https://github.com/sebastiankulla/html_to_md_converter',
-    version=cf_remote_version,
+    version='0.1.2',
     zip_safe=False,
 )
